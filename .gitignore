@@ -1,0 +1,34 @@
+# Byte-compiled / Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environment
+.venv/
+venv/
+env/
+ENV/
+
+# Local Hadoop Binaries (executable binaries shouldn't be tracked in Git)
+.hadoop/
+*.dll
+*.exe
+
+# Storage & Delta Lake Engine Data (local runtime storage and checkpoints)
+data/
+*.parquet
+*.crc
+_delta_log/
+
+# IDE & Editor files
+.vscode/
+.idea/
+*.swp
+
+# Environment variables & secrets (prevent leaking credentials)
+.env
+.env.local
+
+# OS Generated Files
+.DS_Store
+Thumbs.db
