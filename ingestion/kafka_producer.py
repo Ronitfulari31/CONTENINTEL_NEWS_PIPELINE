@@ -1,12 +1,13 @@
 import json
 import logging
 from aiokafka import AIOKafkaProducer
-from models import NewsArticle
+from config import Config
+from models import ArticleSchema
 
 logger = logging.getLogger(__name__)
 
 class KafkaProducerWrapper:
-    def __init__(self, bootstrap_servers: str = "localhost:9092"):
+    def __init__(self, bootstrap_servers: str = Config.KAFKA_BOOTSTRAP_SERVERS):
         self.bootstrap_servers = bootstrap_servers
         self.producer = None
 
@@ -24,7 +25,7 @@ class KafkaProducerWrapper:
             await self.producer.stop()
             logger.info("Kafka Producer stopped.")
 
-    async def send_article(self, topic: str, article: NewsArticle):
+    async def send_article(self, topic: str, article: ArticleSchema):
         if not self.producer:
             raise RuntimeError("Producer is not started. Call start() first.")
 

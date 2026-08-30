@@ -1,5 +1,12 @@
 import os
 import shutil
+import socket
+
+
+def get_free_port() -> int:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.bind(("127.0.0.1", 0))
+        return sock.getsockname()[1]
 
 
 def configure_windows_environment(project_root: str) -> None:
@@ -33,3 +40,13 @@ def configure_spark_home() -> None:
     import pyspark
 
     os.environ["SPARK_HOME"] = os.path.dirname(pyspark.__file__)
+
+
+def setup_hadoop_env(project_root: str | None = None) -> str:
+    """Compatibility helper used by Spark jobs to initialize Windows/Spark env."""
+    if project_root is None:
+        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
+    configure_windows_environment(project_root)
+    configure_spark_home()
+    return project_root

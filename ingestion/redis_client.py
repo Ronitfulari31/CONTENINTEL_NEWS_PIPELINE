@@ -1,10 +1,11 @@
 import logging
 import redis.asyncio as aioredis
+from config import Config
 
 logger = logging.getLogger(__name__)
 
 class RedisClient:
-    def __init__(self, host: str = "localhost", port: int = 6379):
+    def __init__(self, host: str = Config.REDIS_HOST, port: int = Config.REDIS_PORT):
         self.host = host
         self.port = port
         self.redis = None

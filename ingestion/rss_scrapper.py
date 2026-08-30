@@ -6,10 +6,10 @@ import feedparser
 import trafilatura
 from pydantic import ValidationError
 
-from config import RSS_FEEDS, SCRAPER_INTERVAL_SECONDS
+from config import Config
 from .redis_client import RedisClient
 from .kafka_producer import KafkaProducerWrapper
-from models import NewsArticle  # Import Pydantic model
+from models import ArticleSchema
 
 logging.basicConfig(
     level=logging.INFO,
@@ -54,13 +54,15 @@ async def process_feed_entry(entry, country_code: str, http_client: httpx.AsyncC
 
     # 3. Pydantic Model Validation
     try:
-        article = NewsArticle(
-            article_id=url_hash,
+        article = ArticleSchema(
+            id=url_hash,
             title=title,
             url=url,
             source_country=country_code,
-            published_at=published_at,
-            extracted_text=extracted_text
+            content=extracted_text,
+            published_at=published_at or "",
+            word_count=len(extracted_text.split()),
+            is_breaking_news=("breaking" in title.lower()),
         )
     except ValidationError as ve:
         logger.error(f"Validation failed for article {url}: {ve}")
@@ -80,7 +82,7 @@ async def poll_feeds():
         async with httpx.AsyncClient(headers={"User-Agent": "Mozilla/5.0"}) as http_client:
             while True:
                 logger.info("Starting feed polling cycle...")
-                for country, feeds in RSS_FEEDS.items():
+                for country, feeds in Config.RSS_FEEDS.items():
                     for feed_url in feeds:
                         try:
                             parsed_feed = feedparser.parse(feed_url)
@@ -89,8 +91,8 @@ async def poll_feeds():
                         except Exception as e:
                             logger.error(f"Error reading feed {feed_url}: {e}")
 
-                logger.info(f"Cycle complete. Waiting {SCRAPER_INTERVAL_SECONDS} seconds...")
-                await asyncio.sleep(SCRAPER_INTERVAL_SECONDS)
+                logger.info(f"Cycle complete. Waiting {Config.SCRAPER_INTERVAL_SECONDS} seconds...")
+                await asyncio.sleep(Config.SCRAPER_INTERVAL_SECONDS)
     finally:
         await kafka_producer.stop()
         await redis_client.close()
