@@ -194,7 +194,7 @@ if __name__ == "__main__":
     """
     Example usage:
     python -c "
-    from nlp_news.indexer import QdrantIndexer
+    from searching.indexer import QdrantIndexer
     indexer = QdrantIndexer()
     indexed_count = indexer.index_latest_jsonl()
     stats = indexer.get_collection_stats()

@@ -5,7 +5,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-from nlp_news.search_recommendations import NewsSearchEngine
+from recommendation.search_recommendations import NewsSearchEngine
 
 # ---------------------------------------------------------------------------
 # Page Configuration

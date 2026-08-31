@@ -342,7 +342,7 @@ if __name__ == "__main__":
     Example usage and testing:
     
     python -c "
-    from nlp_news.search_recommendations import NewsSearchEngine
+    from recommendation.search_recommendations import NewsSearchEngine
     
     engine = NewsSearchEngine()
     
