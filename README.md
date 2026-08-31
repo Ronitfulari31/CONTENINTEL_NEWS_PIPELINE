@@ -1,4 +1,4 @@
-# 📰 ContentIntel — End-to-End News Data Engineering & NLP Pipeline
+# 📰 ContentIntel — End-to-End News Data Engineering & AI/NLP Pipeline
 
 ![Python](https://img.shields.io/badge/Python-3.9+-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![Apache Spark](https://img.shields.io/badge/Apache%20Spark-3.1+-E25A1C?style=for-the-badge&logo=apachespark&logoColor=white)
@@ -13,91 +13,144 @@ An **enterprise-grade Data Engineering & NLP Intelligence Platform** built aroun
 
 ---
 
-## 🌟 Data Engineering & AI Skills Demonstrated
+## 🏗️ End-to-End System Architecture
 
-### 1. **Medallion Lakehouse Architecture**
-- **Bronze Layer (Raw Storage)**: Real-time RSS ingestion, Redis URL deduplication, Kafka streaming, and PySpark raw append to Azure ADLS Gen2 Delta Lake.
-- **Silver Layer (Cleaned & Standardized)**: PySpark batch/stream cleaning, regex HTML removal, ISO timestamp casting, word count computation, and quality filtering (`word_count >= 30`).
-- **Gold Layer (Business Analytics & Features)**: Business aggregates, publisher metrics, and `nlp_input_articles` feature tables partitioned by `source_country` and `published_date`.
+Below is the high-level architecture diagram illustrating the end-to-end flow from multi-country RSS feeds down to the Streamlit analytics portal.
 
-### 2. **Pipeline Orchestration (Apache Airflow)**
-- Automated DAG (`contentintel_news_pipeline`) scheduling hourly runs across 5 sequential stages.
-- Guaranteed task execution ordering:
-  $$\text{Bronze Ingestion} \longrightarrow \text{Silver Clean} \longrightarrow \text{Gold Feature Store} \longrightarrow \text{9-Task NLP} \longrightarrow \text{Qdrant Vector Indexing}$$
-- Postgres metadata backend with Airflow Webserver (Port `8080`) and Scheduler running in Docker.
-
-### 3. **Vector Data Engineering & Semantic Search**
-- High-performance vector embeddings generated using **FastEmbed** (`BAAI/bge-small-en-v1.5`, 384-dimensions).
-- **Qdrant Vector DB** indexing dense vectors alongside rich analytical metadata payloads (sentiment, entities, category, country).
-- **Hybrid Search Engine**: Vector similarity combined with structured metadata filtering (category, country, sentiment) and article-to-article recommendation discovery loops.
-
-### 4. **9-Stage AI / NLP Enrichment Engine**
-1. **Preprocessing**: Unicode normalization (`ftfy`) & HTML/whitespace regex cleaning.
-2. **Language Detection**: `fast_langdetect` (FastText Lite).
-3. **Machine Translation**: Offline CPU-friendly translation (`argostranslate`) to convert non-English articles into English.
-4. **Named Entity Recognition (NER)**: spaCy (`en_core_web_sm`) extracting 15+ entity types.
-5. **Geographic Verification**: Cross-referencing entities against `geonamescache` (11.5M+ global cities and countries).
-6. **Category Classification**: Rule-based keyword matching (Technology, Business, Politics, Sports, General).
-7. **Keyword Extraction**: Term frequency ranking with category candidate filtering.
-8. **Extractive Summarization**: Graph-based `sumy` LexRankSummarizer (preserves original text without hallucination).
-9. **Sentiment Analysis**: `nltk` VADER Sentiment Intensity Analyzer (Polarity score & Label).
-
-### 5. **Cloud Lakehouse & Containerization**
-- **Azure ADLS Gen2**: Cloud storage integration with PySpark using `abfss://` protocols.
-- **Docker Compose**: Containerized multi-service stack (Redis, Kafka, Qdrant, Postgres, Airflow Init, Webserver, Scheduler).
+![Complete Pipeline Architecture](DOCS/rss_to_streamlit/RSS_TO_STREAMLIT.png)
 
 ---
 
-## 🏗️ Architecture & Pipeline Flow
+## 📚 Detailed Pipeline Breakdown (Part-by-Part)
+
+---
+
+### 🔹 Part 1: Ingestion & Azure Bronze Layer
+In the first phase of the pipeline, RSS feeds from multiple global news sources (US, UK, India) are polled asynchronously.
+- **URL Deduplication**: Uses Redis to store url hashes and eliminate duplicate articles before pushing to Kafka.
+- **Kafka Producer**: Publishes validated raw JSON payloads to the `news.raw` Kafka topic.
+- **Bronze Storage**: Spark continuous stream consumer (`spark_stream_consumer`) writes raw records directly to Azure ADLS Gen2 Delta Lake (`abfss://bronze/...`).
+
+#### Azure Ingestion & Storage Architecture
+![Source Ingestion Bronze Azure](DOCS/source_ingestion_bronze/Source_Ingestion_Bronze(Azure).png)
+
+#### RSS Feed Ingestion Detail
+![RSS to Bronze Pipeline](DOCS/rss_to_bronze/Rss_to_Bronze.png)
+
+---
+
+### 🔹 Part 2: Bronze to Silver Data Cleansing Layer
+The Silver processing layer standardizes, cleanses, and quality-checks the raw Bronze Delta records:
+- Removes HTML tags and cleans unneeded formatting using regex.
+- Standardizes timestamps to ISO format and computes word counts & estimated reading times.
+- Filters out low-quality or short articles (`word_count < 30`).
+- Writes cleaned records into Silver Delta Lake (`abfss://silver/...`) partitioned by `source_country` and `published_date`.
+
+![Bronze to Silver Transformation](DOCS/bronze_silver/Bronze_to_Silver.png)
+
+---
+
+### 🔹 Part 3: Silver to Gold Feature Store & Aggregations Layer
+The Gold layer prepares business-ready analytical datasets and features for downstream NLP and vector indexing:
+- Generates publisher domain metrics, country aggregates, and breaking news indicators.
+- Creates `nlp_input_articles` Delta tables in Gold ADLS storage (`abfss://gold/...`).
+
+![Silver to Gold Enrichment](DOCS/silver_to_gold/Silver_to_gold.png)
+
+---
+
+### 🔹 Part 4: 9-Task NLP Enrichment Engine
+The Gold layer articles are processed through an intensive **9-Task Local CPU NLP Pipeline**:
+
+1. **Text Preprocessing**: Normalizes whitespace & fixes unicode text encoding with `ftfy`.
+2. **Language Detection**: Identifies language using FastText (`fast_langdetect`).
+3. **Machine Translation**: Offline translation (`argostranslate`) to convert non-English text to English.
+4. **Named Entity Recognition (NER)**: spaCy (`en_core_web_sm`) extracting 15+ entity types (`PERSON`, `ORG`, `GPE`, `DATE`, `MONEY`).
+5. **Location Verification**: Geopolitical entity cross-referencing against `geonamescache` (11.5M+ global places).
+6. **Category Classification**: Keyword scoring into Technology, Business, Politics, Sports, General.
+7. **Keyword Extraction**: Term frequency ranking with candidate filtering.
+8. **Extractive Summarization**: Graph-based `sumy` LexRankSummarizer producing a 2-sentence summary without hallucination.
+9. **Sentiment Analysis**: `nltk` VADER Sentiment Intensity Analyzer (Polarity score & Label).
+
+Enriched output is staged locally as JSONL files (`data/nlp_enriched/`) and saved back to Gold Delta Lake (`save_nlp_to_gold.py`).
+
+![Gold to NLP Enrichment](DOCS/gold_nlp_gold/Gold_NLP_GOLD.png)
+
+---
+
+### 🔹 Part 5: Qdrant Vector Search Engine
+The enriched JSONL files are vectorized using **FastEmbed** (`BAAI/bge-small-en-v1.5`, 384-dimensional dense vectors) and indexed into **Qdrant Vector Database**:
+- Stores vector embeddings alongside rich metadata payloads (sentiment label, entities, category, country).
+- Supports **Hybrid Search** (combining dense vector similarity queries with category/country metadata filters).
+
+![Vector Search Engine Architecture](DOCS/search/Search_engine.png)
+
+---
+
+### 🔹 Part 6: Recommendation Engine & Discovery Loop
+Given an active article, the recommendation engine finds semantically similar story vectors in the embedding space:
+- Computes cosine similarity across 384-dim vector neighborhoods in Qdrant.
+- Supports optional category biasing to surface related stories within the same domain.
+
+![Recommendation Engine Flow](DOCS/recommendation/Recomendation.png)
+
+---
+
+### 🔹 Part 7: Gold Data to Streamlit Analytics Portal
+The final output is connected directly to an interactive dual-view Streamlit portal (`app.py`), combining analytical metrics, live vector search, 9-task NLP breakdown reports, and recommendation cards.
+
+![Gold to Streamlit UI Pipeline](DOCS/gold_to_streamlit/Gold_To_Stramlit.png)
+
+---
+
+## 🖥️ Streamlit Analytics Dashboard Screenshots
+
+### 1. Full Article Text & NLP Preview
+Users can read the full cleaned news payload and preview the initial metadata breakdown.
+![Full Article Text Preview](DOCS/streamlit_ui/01_article_full_text_and_nlp_preview.png)
+
+### 2. Comprehensive 9-Task NLP Analysis Report
+Visualizes all 9 NLP task outputs including NER tags, verified locations, LexRank summary, and Plotly VADER sentiment gauge indicator (-1.0 to +1.0).
+![9-Task NLP Analysis Report](DOCS/streamlit_ui/02_nlp_9_task_analysis.png)
+
+### 3. Qdrant Semantic Search Results
+Interactive natural-language semantic query search bar powered by Qdrant vector similarity.
+![Semantic Search Results](DOCS/streamlit_ui/03_semantic_search_results.png)
+
+### 4. Recommendation Discovery Loop (Related Articles)
+Real-time vector match scores for similar articles with one-click navigation to analyze the recommended article next.
+![Recommendation Results](DOCS/streamlit_ui/04_recommendation_results.png)
+
+---
+
+## ⚡ Apache Airflow Pipeline Orchestration
+
+The entire 5-stage pipeline is automated using an hourly **Apache Airflow DAG** (`contentintel_news_pipeline`):
 
 ```
-                     ┌─────────────────────────┐
-                     │   External RSS Feeds    │
-                     │  (BBC US, UK, India...) │
-                     └────────────┬────────────┘
-                                  │
-                                  ▼
-                     ┌─────────────────────────┐
-                     │  Bronze Ingestion Layer │
-                     │   - fetch_rss.py        │
-                     │   - Redis deduplication │
-                     │   - Kafka (news.raw)    │
-                     └────────────┬────────────┘
-                                  │
-                                  ▼
-                     ┌─────────────────────────┐
-                     │  Silver Processing      │
-                     │(spark_silver_processor) │
-                     │ Clean, sanitize, filter │
-                     └────────────┬────────────┘
-                                  │
-                                  ▼
-                     ┌─────────────────────────┐
-                     │   Gold Processing       │
-                     │ (spark_gold_processor)  │
-                     │ Domain/country analytics│
-                     └────────────┬────────────┘
-                                  │
-                                  ▼
-                     ┌─────────────────────────┐
-                     │  9-Task NLP Pipeline    │
-                     │(nlp_enrichment_stand-   │
-                     │  alone / pipeline.py)   │
-                     └────────────┬────────────┘
-                                  │
-                        ┌─────────┴─────────┐
-                        ▼                   ▼
-             ┌─────────────────────┐   ┌───────────────────────────┐
-             │ JSONL Storage       │   │ Qdrant Vector Database    │
-             │ data/nlp_enriched/  │   │ (BAAI/bge-small-en-v1.5)  │
-             └──────────┬──────────┘   └─────────────┬─────────────┘
-                        │                            │
-                        └─────────────┬──────────────┘
-                                      ▼
-                         ┌───────────────────────────┐
-                         │ Streamlit Dashboard UI    │
-                         │ (app.py)                  │
-                         └───────────────────────────┘
+┌───────────────────────┐
+│ ingest_rss_to_bronze  │  (Fetch RSS feeds & Bronze ingestion)
+└───────────┬───────────┘
+            │
+            ▼
+┌───────────────────────┐
+│process_bronze_to_silver│ (PySpark Silver cleaning & schema sanitization)
+└───────────┬───────────┘
+            │
+            ▼
+┌───────────────────────┐
+│ process_silver_to_gold│ (PySpark Gold analytics & nlp_input tables)
+└───────────┬───────────┘
+            │
+            ▼
+┌───────────────────────┐
+│  run_nlp_enrichment   │ (9-Task local NLP enrichment -> JSONL output)
+└───────────┬───────────┘
+            │
+            ▼
+┌───────────────────────┐
+│    index_to_qdrant    │ (Qdrant vector indexing BAAI/bge-small-en-v1.5)
+└───────────────────────┘
 ```
 
 ---
@@ -137,94 +190,38 @@ ContentIntel News Pipeline/
 ├── 📁 dags/                             # Airflow Orchestration
 │   └── news_pipeline_dag.py             # 5-stage automated DAG definition
 │
-├── 📁 DOCS/                             # Documentation & Flow Diagrams
+├── 📁 DOCS/                             # Documentation & Architecture Diagrams
 │   ├── AIRFLOW_ORCHESTRATION.md         # Airflow setup & monitoring guide
-│   └── complete_flow.md                 # End-to-end architecture guide
+│   └── DATA_ENGINEERING_SHOWCASE.md     # Resume bullet points & interview guide
 │
 ├── 📄 app.py                            # Streamlit Analytics Dashboard
 ├── 📄 config.py                         # Central configuration
 ├── 📄 models.py                         # Pydantic data schemas
 ├── 📄 docker-compose.yml                # Docker stack (Redis, Kafka, Qdrant, Airflow, Postgres)
-├── 📄 PIPELINE_COMMANDS.md              # Pipeline execution manual
+├── 📄 PIPELINE_COMMANDS.md              # Execution manual
 └── 📄 requirements.txt                  # Python dependencies
 ```
 
 ---
 
-## 🚀 Quick Start Guide
+## 🚀 Quick Start & Execution
 
-### 1. Prerequisites
-- Python 3.9+
-- Docker Desktop
-- Java 8/11 (for PySpark)
-
-### 2. Environment Setup
-```powershell
-# Clone the repository
-git clone https://github.com/your-username/CONTENINTEL_NEWS_PIPELINE.git
-cd CONTENINTEL_NEWS_PIPELINE
-
-# Create virtual environment & activate
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1   # Windows
-
-# Install Python dependencies
-pip install -r requirements.txt
-```
-
-### 3. Start Container Services (Docker)
+### 1. Start Services via Docker Compose
 ```powershell
 docker compose up -d
 ```
-Starts Redis, Kafka, Qdrant Vector DB, Postgres, Airflow Webserver (Port `8080`), and Airflow Scheduler.
+Starts Redis, Kafka, Qdrant, Postgres, Airflow Webserver (Port `8080`), and Airflow Scheduler.
 
----
+### 2. Access Airflow Web UI
+- **URL**: [http://localhost:8080](http://localhost:8080)
+- **Login**: Username: `admin` | Password: `admin`
+- Unpause **`contentintel_news_pipeline`** and click **Trigger DAG**.
 
-## 🔄 Running the Pipeline
-
-### Option A: Via Apache Airflow UI (Automated)
-1. Open your browser: [http://localhost:8080](http://localhost:8080) (User: `admin` / Password: `admin`)
-2. Find `contentintel_news_pipeline`.
-3. Toggle to **Unpause**, then click **Trigger DAG**.
-
-### Option B: Manual Execution via Terminal
+### 3. Run Streamlit Dashboard
 ```powershell
-# 1. Fetch RSS Feeds into Bronze
-python -m bronze.ingestion.fetch_rss
-
-# 2. Process Bronze to Silver (PySpark)
-python -m silver.processors.spark_silver_processor
-
-# 3. Process Silver to Gold (PySpark)
-python -m gold.processors.spark_gold_processor
-
-# 4. Execute 9-Task NLP Pipeline
-python -m nlp_news.nlp_enrichment_standalone
-
-# 5. Index into Qdrant Vector Store
-python -m searching.indexer
-
-# 6. Launch Streamlit Analytics Portal
 streamlit run app.py
 ```
-
----
-
-## 📊 Streamlit UI Screenshots & Features
-
-### 📰 Page 1: IntelliNews Portal
-- **Multi-Filter Bar**: Filter news headlines dynamically by category, country, or sentiment label.
-- **Qdrant Semantic Search Bar**: Natural-language semantic queries powered by dense vector similarity.
-- **Global Metrics Bar**: Total enriched headlines, active portal display count, topics detected, and average sentiment polarity.
-
-### 🔬 Page 2: Focused 9-Task NLP Report & Recommendation Discovery Loop
-- **Full Cleaned Article View**: Expandable text content view.
-- **9-Task Visual Breakdown**:
-  - NER entity tags (`PERSON`, `ORG`, `GPE`, `DATE`, etc.)
-  - Verified geographic badges (`geonamescache`)
-  - Extractive 2-sentence LexRank summary
-  - Plotly VADER sentiment gauge indicator (-1.0 to +1.0)
-- **Discovery Loop (Related Articles)**: Real-time Qdrant cosine vector recommendations with category bias.
+Open browser: [http://localhost:8501](http://localhost:8501)
 
 ---
 
