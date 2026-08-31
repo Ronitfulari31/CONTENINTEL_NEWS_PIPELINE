@@ -530,8 +530,4 @@ For questions, issues, or suggestions:
 - Cloud data processing
 - Interactive data visualization
 
----
 
-**Built with ❤️ for AI-powered news intelligence**
-
-*Last Updated: 2026-08-31*
