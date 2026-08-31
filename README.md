@@ -13,11 +13,11 @@ An **enterprise-grade Data Engineering & NLP Intelligence Platform** built aroun
 
 ---
 
-## 🏗️ End-to-End System Architecture
+## 🏗️ System Overview & Architecture
 
-Below is the high-level architecture diagram illustrating the end-to-end flow from multi-country RSS feeds down to the Streamlit analytics portal.
+Below is the architecture overview in sleek dark theme showing the **Airflow Pipeline DAG Orchestration (with tech stack symbols)**, **Technologies Stack**, and **Core Data Engineering Concepts**.
 
-![Complete Pipeline Architecture](DOCS/rss_to_streamlit/RSS_TO_STREAMLIT.png)
+![ContentIntel System Overview](DOCS/repo_intro_dark_architecture.png)
 
 ---
 
