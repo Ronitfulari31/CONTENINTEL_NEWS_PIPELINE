@@ -31,7 +31,7 @@ RSS Feeds
 
 │ • fetch_rss.py - Parse RSS feeds                            │
 
-│ • kafka_producer.py - Stream to Kafka                        │
+│ • kafka_producer.py - Stream to Kafka                       │
 
 │ • redis_client.py - Cache management                        │
 
@@ -69,7 +69,7 @@ RSS Feeds
 
 │ • Domain extraction, read time calculation                  │
 
-│ • Partitioning by source_country + published_date          │
+│ • Partitioning by source_country + published_date           │
 
 └─────────────────────────────────────────────────────────────┘
 
@@ -81,7 +81,7 @@ RSS Feeds
 
 ┌─────────────────────────────────────────────────────────────┐
 
-│ NLP ENRICHMENT LAYER (9 Sequential Tasks)                  │
+│ NLP ENRICHMENT LAYER (9 Sequential Tasks)                   │
 
 │ • nlp_enrichment_standalone.py                              │
 
@@ -99,13 +99,13 @@ RSS Feeds
 
 ┌─────────────────────────────────────────────────────────────┐
 
-│ NLP GOLD LAYER (Enriched & Queryable)                      │
+│ NLP GOLD LAYER (Enriched & Queryable)                       │
 
 │ • save_nlp_to_gold.py                                       │
 
 │ • Flatten nested NLP structure for queries                  │
 
-│ • Partition by source_country + published_date             │
+│ • Partition by source_country + published_date              │
 
 └─────────────────────────────────────────────────────────────┘
 
@@ -360,9 +360,15 @@ Full Article Text + NLP Preview
 
 The article analysis view presents the selected news story, metadata, and the beginning of the comprehensive NLP analysis. Users can expand the cleaned article content before reviewing the individual NLP tasks.
 
+![Full Article Text + NLP Preview](DOCS/streamlit_ui/01_article_full_text_and_nlp_preview.png)
+
 
 
 Comprehensive 9-Task NLP Analysis
+
+
+![9-Task NLP Analysis](DOCS/streamlit_ui/02_nlp_9_task_analysis.png)
+
 
 This view shows the actual NLP output generated for an article, including:
 
@@ -392,6 +398,10 @@ Semantic Search Results
 
 The News Portal provides semantic search through Qdrant. A natural-language query is entered in the search interface, and the application returns the most relevant enriched news articles.
 
+
+![Semantic Search Results](DOCS/streamlit_ui/03_semantic_search_results.png)
+
+
 The result view demonstrates:
 
 Natural-language search
@@ -411,6 +421,10 @@ Article cards with deep-analysis navigation
 Recommendation / Related Articles
 
 After an article is analyzed, the application provides a Discovery Loop: Recommended Similar Articles section. These results are generated using Qdrant vector similarity with category-aware discovery.
+
+
+![Recommendation Results](DOCS/streamlit_ui/04_recommendation_results.png)
+
 
 The recommendation cards expose:
 
