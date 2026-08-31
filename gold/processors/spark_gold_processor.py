@@ -16,7 +16,7 @@ from pyspark.sql.functions import (
 )
 
 from config import Config
-from spark.utils import get_free_port, setup_hadoop_env
+from utils.utils import get_free_port, setup_hadoop_env
 
 
 def ensure_gold_container_exists() -> None:

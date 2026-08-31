@@ -20,7 +20,7 @@ from pyspark.sql.functions import (
 from pyspark.sql.types import IntegerType
 
 from config import Config
-from spark.utils import get_free_port, setup_hadoop_env
+from utils.utils import get_free_port, setup_hadoop_env
 
 
 def create_silver_processor():
@@ -67,11 +67,15 @@ def create_silver_processor():
 
     bronze_df = spark.readStream.format("delta").load(Config.ADLS_BRONZE_PATH)
 
-    bronze_text_col = coalesce(
-        col("full_content"),
-        col("content"),
-        col("summary_snippet"),
-        lit(""),
+    bronze_text_candidates = [
+        column
+        for column in ["full_content", "content", "summary_snippet", "extracted_text"]
+        if column in bronze_df.columns
+    ]
+    bronze_text_col = (
+        coalesce(*[col(column) for column in bronze_text_candidates], lit(""))
+        if bronze_text_candidates
+        else lit("")
     )
 
     silver_df = (
@@ -120,6 +124,7 @@ def create_silver_processor():
     query = (
         silver_df.writeStream.format("delta")
         .outputMode("append")
+        .option("mergeSchema", "true")
         .option("checkpointLocation", Config.ADLS_SILVER_CHECKPOINT_PATH)
         .partitionBy("source_country", "published_date")
         .start(Config.ADLS_SILVER_PATH)

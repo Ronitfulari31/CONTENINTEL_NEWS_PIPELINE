@@ -63,6 +63,10 @@ async def process_feed_entry(entry, country_code: str, http_client: httpx.AsyncC
             published_at=published_at or "",
             word_count=len(extracted_text.split()),
             is_breaking_news=("breaking" in title.lower()),
+            full_content=extracted_text,
+            summary_snippet=(extracted_text[:500] if extracted_text else ""),
+            article_id=url_hash,
+            extracted_text=extracted_text,
         )
     except ValidationError as ve:
         logger.error(f"Validation failed for article {url}: {ve}")
