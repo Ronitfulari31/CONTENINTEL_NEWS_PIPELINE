@@ -80,3 +80,16 @@ python -m spark.read_delta_lake
 ```
 
 > Tip: keep the scraper and Spark consumer running in separate terminals. They are the main live parts of the ingestion pipeline.
+
+---
+
+## 6) Run with Apache Airflow Orchestration
+
+```powershell
+# Start full container stack including Airflow Webserver & Scheduler
+docker compose up -d
+
+# Access Airflow Web UI at http://localhost:8080 (User: admin / Pass: admin)
+# Unpause and trigger the DAG 'contentintel_news_pipeline'
+```
+
