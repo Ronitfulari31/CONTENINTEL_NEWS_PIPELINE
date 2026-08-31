@@ -31,8 +31,6 @@ In the first phase of the pipeline, RSS feeds from multiple global news sources 
 - **Kafka Producer**: Publishes validated raw JSON payloads to the `news.raw` Kafka topic.
 - **Bronze Storage**: Spark continuous stream consumer (`spark_stream_consumer`) writes raw records directly to Azure ADLS Gen2 Delta Lake (`abfss://bronze/...`).
 
-#### Azure Ingestion & Storage Architecture
-![Source Ingestion Bronze Azure](DOCS/source_ingestion_bronze/Source_Ingestion_Bronze(Azure).png)
 
 #### RSS Feed Ingestion Detail
 ![RSS to Bronze Pipeline](DOCS/rss_to_bronze/Rss_to_Bronze.png)
