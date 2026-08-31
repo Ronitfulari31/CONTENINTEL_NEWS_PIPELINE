@@ -9,6 +9,11 @@ class Config:
     KAFKA_BOOTSTRAP_SERVERS = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
     REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
     REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
+    
+    # Qdrant Vector Database Configuration
+    QDRANT_HOST = os.getenv("QDRANT_HOST", "localhost")
+    QDRANT_PORT = int(os.getenv("QDRANT_PORT", "6333"))
+    QDRANT_COLLECTION = os.getenv("QDRANT_COLLECTION", "news_articles")
 
     AZURE_STORAGE_ACCOUNT = os.getenv("AZURE_STORAGE_ACCOUNT", "")
     AZURE_STORAGE_KEY = os.getenv("AZURE_STORAGE_KEY", "")

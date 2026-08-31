@@ -8,3 +8,5 @@ pyspark==3.5.0
 delta-spark==3.1.0
 python-dotenv>=1.0.0
 azure-storage-blob>=12.20.0
+qdrant-client>=1.13.0,<2.0
+fastembed>=0.2.0

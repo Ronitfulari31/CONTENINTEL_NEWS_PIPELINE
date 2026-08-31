@@ -32,3 +32,6 @@ _delta_log/
 # OS Generated Files
 .DS_Store
 Thumbs.db
+
+#qdrant Files
+qdrant_storage/

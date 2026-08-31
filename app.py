@@ -1,8 +1,11 @@
 import glob
 import json
+import re
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
+
+from nlp_news.search_recommendations import NewsSearchEngine
 
 # ---------------------------------------------------------------------------
 # Page Configuration
@@ -89,6 +92,30 @@ def load_data():
             })
     return pd.DataFrame(records)
 
+
+@st.cache_resource
+def get_search_engine():
+    """Create one Qdrant search client for the Streamlit session."""
+    return NewsSearchEngine(host="localhost", port=6333)
+
+
+def infer_search_category(query):
+    """Use explicit category words in a query as a local result constraint."""
+    query_lower = query.lower()
+    category_terms = {
+        "Technology": ("technology", "tech", "artificial intelligence", "ai"),
+        "Politics": ("politics", "political", "election", "government"),
+        "Sports": ("sports", "sport", "football", "soccer", "cricket", "tennis"),
+        "Business": ("business", "economy", "economic", "market", "finance"),
+    }
+    for category, terms in category_terms.items():
+        if any(
+            re.search(rf"\b{re.escape(term)}\b", query_lower)
+            for term in terms
+        ):
+            return category
+    return None
+
 df = load_data()
 
 if df.empty:
@@ -105,6 +132,20 @@ def view_article_analysis(article_id):
 # Helper function to return back to Portal view
 def return_to_portal():
     st.session_state["selected_article_id"] = None
+
+
+def load_related_articles(article_id, category_bias=None, limit=3):
+    """Fetch real related articles from the Qdrant vector store."""
+    try:
+        engine = NewsSearchEngine(host="localhost", port=6333)
+        return engine.get_related_recommendations(
+            article_id=article_id,
+            category_bias=category_bias,
+            limit=limit,
+        )
+    except Exception as exc:
+        st.warning(f"Recommendation service unavailable: {exc}")
+        return []
 
 # ---------------------------------------------------------------------------
 # VIEW 1: NEWS PORTAL (Main List View)
@@ -143,17 +184,38 @@ if st.session_state["selected_article_id"] is None:
     st.title("📰 IntelliNews Portal")
 
     search_query = st.text_input(
-        "🔍 Search across enriched news articles...",
-        placeholder="Type keywords (e.g. Technology, Market, Government)...",
+        "🔍 Semantic search with Qdrant",
+        placeholder="Describe what you want to find, e.g. AI breakthroughs...",
     )
 
     if search_query:
-        filtered_df = filtered_df[
-            filtered_df["title"].str.contains(search_query, case=False, na=False)
-            | filtered_df["full_news_text"].str.contains(
-                search_query, case=False, na=False
+        try:
+            search_results = get_search_engine().hybrid_search(
+                query_text=search_query,
+                limit=len(df),
             )
-        ]
+            relevance_order = {
+                result.get("article_id"): index
+                for index, result in enumerate(search_results)
+                if result.get("article_id")
+            }
+            inferred_category = infer_search_category(search_query)
+            if inferred_category:
+                filtered_df = filtered_df[
+                    filtered_df["predicted_category"].eq(inferred_category)
+                ].copy()
+            filtered_df = filtered_df[
+                filtered_df["article_id"].isin(relevance_order)
+            ].copy()
+            filtered_df["_relevance_order"] = filtered_df["article_id"].map(
+                relevance_order
+            )
+            filtered_df = filtered_df.sort_values("_relevance_order").drop(
+                columns="_relevance_order"
+            )
+        except Exception as exc:
+            st.warning(f"Qdrant semantic search is unavailable: {exc}")
+            filtered_df = filtered_df.iloc[0:0]
 
     # Global Intelligence Metrics Bar
     m1, m2, m3, m4 = st.columns(4)
@@ -344,31 +406,43 @@ else:
 
     st.markdown("---")
 
-    # Section 3: Recommendation Discovery Loop (Hardcoded Placeholders)
+    # Section 3: Recommendation Discovery Loop (real Qdrant-based items)
     st.subheader("🔄 Discovery Loop: Recommended Similar Articles")
-    st.caption(
-        "Simulated Vector Similarity Recommendations (Placeholder until FastEmbed + Qdrant Integration)"
+    st.caption("Qdrant vector similarity with category-aware related article discovery")
+
+    related_articles = load_related_articles(
+        article_id=article["article_id"],
+        category_bias=article.get("predicted_category"),
+        limit=3,
     )
 
-    rec_col1, rec_col2, rec_col3 = st.columns(3)
+    if not related_articles:
+        st.info("No related articles were returned for this story. Try a different article or ensure Qdrant is running.")
+    else:
+        rec_cols = st.columns(min(len(related_articles), 3))
+        for idx, rec in enumerate(related_articles):
+            with rec_cols[idx % len(rec_cols)]:
+                with st.container():
+                    category = rec.get("category") or article.get("predicted_category", "General")
+                    sentiment = rec.get("sentiment_label") or "Neutral"
+                    score = rec.get("similarity_score", 0.0)
+                    color = {
+                        "Technology": "blue",
+                        "Business": "red",
+                        "Politics": "orange",
+                        "Sports": "green",
+                        "General": "gray"
+                    }.get(category, "gray")
 
-    with rec_col1:
-        with st.container():
-            st.markdown("**:blue[[Technology]]**")
-            st.markdown("#### AI Framework Adoption Surges Across Europe")
-            st.caption("Vector Match: **94%** | Shared Entities: 2")
-            st.button("Analyze This Next ➔", key="rec_btn_1", use_container_width=True)
-
-    with rec_col2:
-        with st.container():
-            st.markdown("**:red[[Business]]**")
-            st.markdown("#### Global Markets Shift Focus Following AI Deployment")
-            st.caption("Vector Match: **91%** | Shared Category: Technology")
-            st.button("Analyze This Next ➔", key="rec_btn_2", use_container_width=True)
-
-    with rec_col3:
-        with st.container():
-            st.markdown("**:green[[General]]**")
-            st.markdown("#### European Tech Regulations entering Final Stages")
-            st.caption("Vector Match: **88%** | Shared Location: Paris")
-            st.button("Analyze This Next ➔", key="rec_btn_3", use_container_width=True)
+                    st.markdown(f"**:{color}[[{category}]]**")
+                    st.markdown(f"#### {rec.get('title', 'Untitled article')}")
+                    st.caption(
+                        f"Vector Match: **{score:.2%}** | Sentiment: {sentiment} | Country: {rec.get('source_country', 'N/A')}"
+                    )
+                    st.button(
+                        "Analyze This Next ➔",
+                        key=f"rec_btn_{idx}_{rec.get('article_id', idx)}",
+                        on_click=view_article_analysis,
+                        args=(rec.get("article_id"),),
+                        use_container_width=True,
+                    )

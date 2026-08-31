@@ -263,7 +263,103 @@ Displays all 9 NLP enrichment results with visual components:
 
 ---
 
-## 📁 Project Directory Structure
+## � Vector Search & Recommendation Engine
+
+The discovery loop leverages **Qdrant vector database** for semantic search and content recommendation, enabling users to find semantically similar articles beyond keyword matching.
+
+### Architecture: Gold → Vector Indexing → Search Engine
+
+```
+Gold Layer (Enriched Articles)
+         ↓
+    [JSONL Staging]
+         ↓
+┌─────────────────────────────────┐
+│  Vector Indexing (indexer.py)   │
+│  • TextEmbedding (FastEmbed)     │
+│  • 384-dim dense vectors         │
+│  • Metadata extraction (NLP)     │
+└─────────┬───────────────────────┘
+          ↓
+┌─────────────────────────────────┐
+│   Qdrant Vector Database        │
+│  • Vector collection            │
+│  • Payload with metadata        │
+│  • COSINE distance metric       │
+└─────────┬───────────────────────┘
+          ↓
+┌─────────────────────────────────┐
+│ Search Engine                   │
+│ (search_recommendations.py)     │
+│  • Hybrid search (semantic +    │
+│    metadata filters)            │
+│  • Related recommendations      │
+│  • Trending analysis            │
+└─────────┬───────────────────────┘
+          ↓
+    Streamlit Dashboard
+```
+
+### Features
+
+**Hybrid Semantic + Metadata Search**
+- Semantic vector similarity (384-dim embeddings)
+- Structured metadata filtering (category, country, sentiment)
+- Combined query execution for precision results
+
+**Recommendation Loop**
+- Given an article, find semantically similar articles
+- Optional category bias for related recommendations
+- Vector neighborhood discovery in embedding space
+
+**Advanced Query Patterns**
+- Category + Sentiment filtering
+- Geographic (country) filtering
+- Complex filter combinations
+- Trending topic extraction
+
+### Usage Examples
+
+**1. Hybrid Semantic Search:**
+```python
+from nlp_news.search_recommendations import NewsSearchEngine
+
+engine = NewsSearchEngine()
+results = engine.hybrid_search(
+    query_text="artificial intelligence breakthrough",
+    category_filter="Technology",
+    limit=5
+)
+```
+
+**2. Get Related Articles:**
+```python
+recommendations = engine.get_related_recommendations(
+    article_id="art_12345",
+    limit=3
+)
+```
+
+**3. Advanced Filtering:**
+```python
+results = engine.advanced_search(
+    query_text="economic impact",
+    filters={
+        "category": "Business",
+        "country": "GB",
+        "sentiment": "Negative"
+    }
+)
+```
+
+**4. Trending Topics:**
+```python
+trending = engine.get_trending_topics(limit=10)
+```
+
+---
+
+## �📁 Project Directory Structure
 
 ```
 ContentIntel News Pipeline/
@@ -285,11 +381,13 @@ ContentIntel News Pipeline/
 │       ├── read_delta_lake.py
 │       └── utils.py
 │
-├── nlp_news/                   ← NLP enrichment
+├── nlp_news/                   ← NLP enrichment & vector search
 │   ├── pipeline.py             (9-task orchestrator)
 │   ├── nlp_enrichment_standalone.py
 │   ├── save_nlp_to_gold.py
-│   └── enrichment.py
+│   ├── enrichment.py
+│   ├── indexer.py              (Qdrant vector indexing)
+│   └── search_recommendations.py (Hybrid search & recommendations)
 │
 ├── utils/
 │   └── utils.py                ← Shared Spark utilities
@@ -395,7 +493,17 @@ main()
 "
 ```
 
-### 6. Launch Streamlit Dashboard
+### 6. Index Enriched Articles to Qdrant
+```bash
+python -c "
+from nlp_news.indexer import QdrantIndexer
+indexer = QdrantIndexer(host='localhost', port=6333)
+indexed_count = indexer.index_latest_jsonl('data/nlp_enriched')
+print(f'Indexed {indexed_count} articles')
+"
+```
+
+### 7. Launch Streamlit Dashboard
 ```bash
 streamlit run app.py --server.port 8501
 ```
