@@ -1,30 +1,25 @@
-# 📰 ContentIntel News Pipeline - AI-Powered News Enrichment
+📰 ContentIntel News Pipeline - AI-Powered News Enrichment
 
-A comprehensive **end-to-end data engineering pipeline** that ingests RSS feeds, processes them through a multi-layer data lakehouse (Bronze → Silver → Gold), applies advanced NLP enrichment (9 tasks), and visualizes insights through an interactive Streamlit dashboard.
+A comprehensive end-to-end data engineering pipeline that ingests RSS feeds, processes them through a multi-layer data lakehouse (Bronze → Silver → Gold), applies advanced NLP enrichment (9 tasks), and visualizes insights through an interactive Streamlit dashboard.
 
----
-
-## 🎯 Project Overview
+🎯 Project Overview
 
 ContentIntel is a production-ready news intelligence platform that:
 
-- ✅ **Ingests** news from multiple RSS feeds in real-time
+✅ Ingests news from multiple RSS feeds in real-time
 
-- ✅ **Cleans** and normalizes raw data through layered processing
+✅ Cleans and normalizes raw data through layered processing
 
-- ✅ **Enriches** articles with 9 AI/NLP tasks (language detection, NER, sentiment, etc.)
+✅ Enriches articles with 9 AI/NLP tasks (language detection, NER, sentiment, etc.)
 
-- ✅ **Visualizes** comprehensive analysis through an interactive dashboard
+✅ Visualizes comprehensive analysis through an interactive dashboard
 
-**Technology Stack**: Apache Spark, Delta Lake, spaCy, FastText, VADER, LexRank, Azure ADLS Gen2, Docker, Streamlit
+Technology Stack: Apache Spark, Delta Lake, spaCy, FastText, VADER, LexRank, Azure ADLS Gen2, Docker, Streamlit
 
----
+🏗️ Architecture Overview
 
-## 🏗️ Architecture Overview
+End-to-End Data Flow
 
-### End-to-End Data Flow
-
-```
 
 RSS Feeds
 
@@ -130,117 +125,105 @@ RSS Feeds
 
 └─────────────────────────────────────────────────────────────┘
 
-```
 
-### High-Level Architecture Diagrams
+High-Level Architecture Diagrams
 
-**RSS → Bronze Pipeline:**
+RSS → Bronze Pipeline:
 
-![RSS to Bronze](DOCS/rss_to_bronze/Rss_to_Bronze.png)
 
-**Bronze → Silver Transformation:**
 
-![Bronze to Silver](DOCS/bronze_silver/Bronze_to_Silver.png)
+Bronze → Silver Transformation:
 
-**Silver → Gold Enrichment:**
 
-![Silver to Gold](DOCS/silver_to_gold/Silver_to_gold.png)
 
-**Gold → NLP Processing:**
+Silver → Gold Enrichment:
 
-![Gold to NLP](DOCS/gold_nlp_gold/Gold_NLP_GOLD.png)
 
-**Gold → Streamlit Dashboard:**
 
-![Gold to Streamlit](DOCS/gold_to_streamlit/Gold_To_Stramlit.png)
+Gold → NLP Processing:
 
-**Complete Pipeline:**
 
-![RSS to Streamlit](DOCS/rss_to_streamlit/RSS_TO_STREAMLIT.png)
 
----
+Gold → Streamlit Dashboard:
 
-## 🧠 9-Task NLP Enrichment Pipeline
 
-The **core innovation** of ContentIntel is a comprehensive 9-task NLP pipeline that processes each article sequentially:
 
-### Task 1: **Text Preprocessing** 🧹
+Complete Pipeline:
 
-- Removes HTML tags and special characters
 
-- Normalizes whitespace
 
-- Applies ftfy for text encoding fixes
+🧠 9-Task NLP Enrichment Pipeline
 
-- Uses regex for comprehensive text cleanup
+The core innovation of ContentIntel is a comprehensive 9-task NLP pipeline that processes each article sequentially:
 
-**Input**: Raw article text  
+Task 1: Text Preprocessing 🧹
 
-**Output**: Clean, normalized text
+Removes HTML tags and special characters
 
----
+Normalizes whitespace
 
-### Task 2: **Language Detection** 🌍
+Applies ftfy for text encoding fixes
 
-- Uses **FastText** (fast_langdetect) model
+Uses regex for comprehensive text cleanup
 
-- Detects language from 160+ languages
+Input: Raw article text  
 
-- Essential for translation routing
+Output: Clean, normalized text
 
-**Example**: `"Detected language: EN"`
+Task 2: Language Detection 🌍
 
----
+Uses FastText (fast_langdetect) model
 
-### Task 3: **Translation** 🔄
+Detects language from 160+ languages
 
-- Uses **ArgosTranslate** for offline translation
+Essential for translation routing
 
-- Automatically translates non-English articles to English
+Example: "Detected language: EN"
 
-- Enables unified NLP processing across multiple languages
+Task 3: Translation 🔄
 
-**Example**: If German → Translates to English
+Uses ArgosTranslate for offline translation
 
----
+Automatically translates non-English articles to English
 
-### Task 4: **Named Entity Recognition (NER)** 👤
+Enables unified NLP processing across multiple languages
 
-- Powered by **spaCy en_core_web_sm** model
+Example: If German → Translates to English
 
-- Identifies and classifies entities:
+Task 4: Named Entity Recognition (NER) 👤
 
-  - **PERSON**: People names
+Powered by spaCy en_core_web_sm model
 
-  - **ORG**: Organizations
+Identifies and classifies entities:
 
-  - **GPE**: Geopolitical entities
+  - PERSON: People names
 
-  - **DATE**: Time references
+  - ORG: Organizations
 
-  - **CARDINAL**: Numerical expressions
+  - GPE: Geopolitical entities
 
-  - **MONEY**: Financial amounts
+  - DATE: Time references
+
+  - CARDINAL: Numerical expressions
+
+  - MONEY: Financial amounts
 
   - etc.
 
-**Entities Detected**: 15+ entity types  
+Entities Detected: 15+ entity types  
 
-**Framework**: spaCy v3.0+ (production-grade NLP)
+Framework: spaCy v3.0+ (production-grade NLP)
 
----
+Task 5: Location Extraction & Verification 📍
 
-### Task 5: **Location Extraction & Verification** 📍
+Extracts GPE (Geopolitical Entity) tags from NER
 
-- Extracts GPE (Geopolitical Entity) tags from NER
+Verifies against geonamescache (11.5M+ locations)
 
-- Verifies against **geonamescache** (11.5M+ locations)
+Returns verified location names with country codes
 
-- Returns verified location names with country codes
+Example Output:
 
-**Example Output**:
-
-```
 
 - UK (country: GB)
 
@@ -248,93 +231,81 @@ The **core innovation** of ContentIntel is a comprehensive 9-task NLP pipeline t
 
 - Nottingham (country: GB)
 
-```
 
----
+Task 6: Category Classification 🏷️
 
-### Task 6: **Category Classification** 🏷️
+Rule-based classification using keywords
 
-- Rule-based classification using keywords
+Categories: Technology, Business, Politics, Sports, Health, Science, Entertainment, etc.
 
-- Categories: Technology, Business, Politics, Sports, Health, Science, Entertainment, etc.
+Biased scoring towards category-relevant keywords
 
-- Biased scoring towards category-relevant keywords
+Example: "Predicted category: Technology"
 
-**Example**: `"Predicted category: Technology"`
+Task 7: Keyword Extraction 🔑
 
----
+TF-based keyword ranking with category bias
 
-### Task 7: **Keyword Extraction** 🔑
+Filters out stopwords
 
-- **TF-based keyword ranking** with category bias
+Returns top keywords by relevance
 
-- Filters out stopwords
+Example Keywords:
 
-- Returns top keywords by relevance
+people
 
-**Example Keywords**:
+data
 
-- people
+education
 
-- data
+employment
 
-- education
+neets (youth without work/education)
 
-- employment
+Task 8: Extractive Summarization 📝
 
-- neets (youth without work/education)
+Uses LexRank algorithm (graph-based, no ML training needed)
 
----
+Extracts 2-3 key sentences
 
-### Task 8: **Extractive Summarization** 📝
+Provides condensed article overview without hallucination
 
-- Uses **LexRank** algorithm (graph-based, no ML training needed)
+Input: Full article content  
 
-- Extracts 2-3 key sentences
+Output: 2-3 key sentences preserving original text
 
-- Provides condensed article overview without hallucination
+Task 9: Sentiment Analysis 💭
 
-**Input**: Full article content  
+VADER (Valence Aware Dictionary and sEntiment Reasoner)
 
-**Output**: 2-3 key sentences preserving original text
+Scores sentiment as float between -1 (negative) and +1 (positive)
 
----
+Includes compound score for overall sentiment
 
-### Task 9: **Sentiment Analysis** 💭
+Sentiment Gauge Example: 0.995 (Very Positive)  
 
-- **VADER (Valence Aware Dictionary and sEntiment Reasoner)**
+Categories: Negative | Neutral | Positive
 
-- Scores sentiment as float between -1 (negative) and +1 (positive)
+📊 Interactive Streamlit Dashboard
 
-- Includes compound score for overall sentiment
-
-**Sentiment Gauge Example**: 0.995 (Very Positive)  
-
-**Categories**: Negative | Neutral | Positive
-
----
-
-## 📊 Interactive Streamlit Dashboard
-
-### Page 1: News Portal
+Page 1: News Portal
 
 Provides the interactive news discovery experience:
 
-- Semantic search powered by Qdrant
+Semantic search powered by Qdrant
 
-- Article cards with category, source, country, and sentiment
+Article cards with category, source, country, and sentiment
 
-- Search and filtering of enriched news
+Search and filtering of enriched news
 
-- Full cleaned article content (collapsible)
+Full cleaned article content (collapsible)
 
-- Related-article recommendation / discovery loop
+Related-article recommendation / discovery loop
 
-### Page 2: Comprehensive 9-Task Analysis
+Page 2: Comprehensive 9-Task Analysis
 
-**Visual output of all 9 NLP tasks:**
+Visual output of all 9 NLP tasks:
 
-```
 
 2. Comprehensive 9-Task NLP Analysis Report
 
@@ -380,19 +351,18 @@ Task 9: Sentiment Score & Label
 
 ├─ Label: Positive
 
-```
 
-### Dashboard Screenshots
+Dashboard Screenshots
 
 The Streamlit application provides the final user-facing layer of the pipeline. The screenshots below are from the running project and demonstrate the major outputs delivered by the platform.
 
-1) Full Article Text + NLP Preview
+Full Article Text + NLP Preview
 
 The article analysis view presents the selected news story, metadata, and the beginning of the comprehensive NLP analysis. Users can expand the cleaned article content before reviewing the individual NLP tasks.
 
 
 
-2) Comprehensive 9-Task NLP Analysis
+Comprehensive 9-Task NLP Analysis
 
 This view shows the actual NLP output generated for an article, including:
 
@@ -418,7 +388,7 @@ The interface also visualizes the sentiment score and exposes extracted entities
 
 
 
-3) Semantic Search Results
+Semantic Search Results
 
 The News Portal provides semantic search through Qdrant. A natural-language query is entered in the search interface, and the application returns the most relevant enriched news articles.
 
@@ -438,7 +408,7 @@ Article cards with deep-analysis navigation
 
 
 
-4) Recommendation / Related Articles
+Recommendation / Related Articles
 
 After an article is analyzed, the application provides a Discovery Loop: Recommended Similar Articles section. These results are generated using Qdrant vector similarity with category-aware discovery.
 
@@ -461,15 +431,12 @@ News Portal → Search → Article Selection → Full Text → 9-Task NLP Analys
 
 These screenshots showcase the actual end-user experience of the search, NLP enrichment, article analysis, and recommendation components.
 
----
+� Vector Search & Recommendation Engine
 
-## � Vector Search & Recommendation Engine
+The discovery loop leverages Qdrant vector database for semantic search and content recommendation, enabling users to find semantically similar articles beyond keyword matching.
 
-The discovery loop leverages **Qdrant vector database** for semantic search and content recommendation, enabling users to find semantically similar articles beyond keyword matching.
+Architecture: Gold → Vector Indexing → Search Engine
 
-### Architecture: Gold → Vector Indexing → Search Engine
-
-```
 
 Gold Layer (Enriched Articles)
 
@@ -527,41 +494,39 @@ Gold Layer (Enriched Articles)
 
     Streamlit Dashboard
 
-```
 
-### Features
+Features
 
-**Hybrid Semantic + Metadata Search**
+Hybrid Semantic + Metadata Search
 
-- Semantic vector similarity (384-dim embeddings)
+Semantic vector similarity (384-dim embeddings)
 
-- Structured metadata filtering (category, country, sentiment)
+Structured metadata filtering (category, country, sentiment)
 
-- Combined query execution for precision results
+Combined query execution for precision results
 
-**Recommendation Loop**
+Recommendation Loop
 
-- Given an article, find semantically similar articles
+Given an article, find semantically similar articles
 
-- Optional category bias for related recommendations
+Optional category bias for related recommendations
 
-- Vector neighborhood discovery in embedding space
+Vector neighborhood discovery in embedding space
 
-**Advanced Query Patterns**
+Advanced Query Patterns
 
-- Category + Sentiment filtering
+Category + Sentiment filtering
 
-- Geographic (country) filtering
+Geographic (country) filtering
 
-- Complex filter combinations
+Complex filter combinations
 
-- Trending topic extraction
+Trending topic extraction
 
-### Usage Examples
+Usage Examples
 
-**1. Hybrid Semantic Search:**
+1. Hybrid Semantic Search:
 
-```python
 
 from nlp_news.search_recommendations import NewsSearchEngine
 
@@ -577,11 +542,9 @@ results = engine.hybrid_search(
 
 )
 
-```
 
-**2. Get Related Articles:**
+2. Get Related Articles:
 
-```python
 
 recommendations = engine.get_related_recommendations(
 
@@ -591,11 +554,9 @@ recommendations = engine.get_related_recommendations(
 
 )
 
-```
 
-**3. Advanced Filtering:**
+3. Advanced Filtering:
 
-```python
 
 results = engine.advanced_search(
 
@@ -613,21 +574,15 @@ results = engine.advanced_search(
 
 )
 
-```
 
-**4. Trending Topics:**
+4. Trending Topics:
 
-```python
 
 trending = engine.get_trending_topics(limit=10)
 
-```
 
----
+�📁 Project Directory Structure
 
-## �📁 Project Directory Structure
-
-```
 
 ContentIntel News Pipeline/
 
@@ -713,37 +668,31 @@ ContentIntel News Pipeline/
 
 └── docker-compose.yml          ← Docker services
 
-```
 
----
+🚀 Quick Start
 
-## 🚀 Quick Start
+Prerequisites
 
-### Prerequisites
+Python 3.9+
 
-- Python 3.9+
+Java 8+
 
-- Java 8+
+Docker & Docker Compose
 
-- Docker & Docker Compose
+Azure Storage Account (ADLS Gen2) or local Spark setup
 
-- Azure Storage Account (ADLS Gen2) or local Spark setup
+Installation
 
-### Installation
+Clone the repository
 
-1. **Clone the repository**
-
-```bash
 
 git clone <repo-url>
 
 cd CONTENINTEL_NEWS_PIPELINE
 
-```
 
-2. **Create virtual environment**
+Create virtual environment
 
-```bash
 
 python -m venv .venv
 
@@ -751,19 +700,15 @@ python -m venv .venv
 
 source .venv/bin/activate  # Linux/Mac
 
-```
 
-3. **Install dependencies**
+Install dependencies
 
-```bash
 
 pip install -r requirements.txt
 
-```
 
-4. **Configure environment**
+Configure environment
 
-```bash
 
 # Update .env file with:
 
@@ -771,23 +716,17 @@ AZURE_STORAGE_ACCOUNT=<your-account>
 
 AZURE_STORAGE_KEY=<your-key>
 
-```
 
-5. **Start Docker services** (Kafka, Redis)
+Start Docker services (Kafka, Redis)
 
-```bash
 
 docker-compose up -d
 
-```
 
----
+📋 Pipeline Execution
 
-## 📋 Pipeline Execution
+1. Ingest RSS Feeds (Bronze Layer)
 
-### 1. Ingest RSS Feeds (Bronze Layer)
-
-```bash
 
 python -c "
 
@@ -799,11 +738,9 @@ feeds = asyncio.run(fetch_all_feeds())
 
 "
 
-```
 
-### 2. Process Bronze → Silver
+2. Process Bronze → Silver
 
-```bash
 
 python -c "
 
@@ -813,11 +750,9 @@ create_silver_processor()
 
 "
 
-```
 
-### 3. Enrich Silver → Gold
+3. Enrich Silver → Gold
 
-```bash
 
 python -c "
 
@@ -827,11 +762,9 @@ ensure_gold_container_exists()
 
 "
 
-```
 
-### 4. Apply NLP Enrichment
+4. Apply NLP Enrichment
 
-```bash
 
 python -c "
 
@@ -841,11 +774,9 @@ enrich_articles_locally()
 
 "
 
-```
 
-### 5. Persist NLP Results to Gold
+5. Persist NLP Results to Gold
 
-```bash
 
 python -c "
 
@@ -855,11 +786,9 @@ main()
 
 "
 
-```
 
-### 6. Index Enriched Articles to Qdrant
+6. Index Enriched Articles to Qdrant
 
-```bash
 
 python -c "
 
@@ -873,55 +802,45 @@ print(f'Indexed {indexed_count} articles')
 
 "
 
-```
 
-### 7. Launch Streamlit Dashboard
+7. Launch Streamlit Dashboard
 
-```bash
 
 streamlit run app.py --server.port 8501
 
-```
 
-Open browser: **http://localhost:8501**
+Open browser: http://localhost:8501
 
----
+📊 Data Volumes & Performance
 
-## 📊 Data Volumes & Performance
+Input: 1,190+ articles from multiple RSS feeds
 
-- **Input**: 1,190+ articles from multiple RSS feeds
+Processing: ~40-50 MB JSONL intermediate output
 
-- **Processing**: ~40-50 MB JSONL intermediate output
+NLP Processing Time: Sequential (CPU-optimized)
 
-- **NLP Processing Time**: Sequential (CPU-optimized)
+Output Partitions: By source_country + published_date
 
-- **Output Partitions**: By source_country + published_date
+🔧 Configuration
 
----
+Edit config.py to customize:
 
-## 🔧 Configuration
+RSS feed sources
 
-Edit `config.py` to customize:
+Azure ADLS paths
 
-- RSS feed sources
+Kafka bootstrap servers
 
-- Azure ADLS paths
+Redis cache settings
 
-- Kafka bootstrap servers
+Spark configuration
 
-- Redis cache settings
+NLP model selections
 
-- Spark configuration
+🧪 Validation & Testing
 
-- NLP model selections
+All imports validated:
 
----
-
-## 🧪 Validation & Testing
-
-**All imports validated:**
-
-```
 
 ✓ nlp_news.pipeline.run_nlp_pipeline
 
@@ -935,140 +854,125 @@ Edit `config.py` to customize:
 
 ✓ utils.utils.get_free_port
 
-```
 
----
+📚 Documentation
 
-## 📚 Documentation
+Comprehensive documentation available in /DOCS:
 
-Comprehensive documentation available in `/DOCS`:
+complete_flow.md - End-to-end pipeline walkthrough
 
-- **[complete_flow.md](DOCS/complete_flow.md)** - End-to-end pipeline walkthrough
+DIRECTORY_STRUCTURE.md - Data layer locations
 
-- **[DIRECTORY_STRUCTURE.md](DOCS/DIRECTORY_STRUCTURE.md)** - Data layer locations
+DIRECTORY_REORGANIZATION.md - Architecture details
 
-- **[DIRECTORY_REORGANIZATION.md](DOCS/DIRECTORY_REORGANIZATION.md)** - Architecture details
+silver_to_gold.md - Silver layer transformation
 
-- **[silver_to_gold.md](DOCS/silver_to_gold/silver_to_gold.md)** - Silver layer transformation
+gold_to_nlp_to_gold.md - NLP enrichment details
 
-- **[gold_to_nlp_to_gold.md](DOCS/silver_to_gold/gold_to_nlp_to_gold.md)** - NLP enrichment details
+🏛️ Architecture Decisions
 
----
+Why Local NLP Processing?
 
-## 🏛️ Architecture Decisions
+Spark UDFs struggle with large Python NLP libraries on Windows
 
-### Why Local NLP Processing?
+Local CPU batch processing avoids serialization timeouts
 
-- Spark UDFs struggle with large Python NLP libraries on Windows
+JSONL intermediate format enables debugging & validation
 
-- Local CPU batch processing avoids serialization timeouts
+Scales to thousands of articles efficiently
 
-- JSONL intermediate format enables debugging & validation
+Why Delta Lake?
 
-- Scales to thousands of articles efficiently
+ACID transactions for reliability
 
-### Why Delta Lake?
+Time travel capability for data lineage
 
-- ACID transactions for reliability
+Partitioned storage for query performance
 
-- Time travel capability for data lineage
+Seamless integration with Spark
 
-- Partitioned storage for query performance
+Why Streamlit?
 
-- Seamless integration with Spark
+Rapid dashboard development
 
-### Why Streamlit?
+No JavaScript/frontend expertise needed
 
-- Rapid dashboard development
+Real-time data refresh
 
-- No JavaScript/frontend expertise needed
+Interactive widgets for filtering & search
 
-- Real-time data refresh
+📈 Future Enhancements
 
-- Interactive widgets for filtering & search
+Real-time Kafka stream processing
 
----
+Redis caching for frequently accessed articles
 
-## 📈 Future Enhancements
+Graph-based recommendation engine
 
-- [ ] Real-time Kafka stream processing
+Advanced sentiment analysis (transformers)
 
-- [ ] Redis caching for frequently accessed articles
+Multi-language NLP pipelines
 
-- [ ] Graph-based recommendation engine
+API layer for external integrations
 
-- [ ] Advanced sentiment analysis (transformers)
+Scheduled pipeline orchestration (Airflow)
 
-- [ ] Multi-language NLP pipelines
+🤝 Contributing
 
-- [ ] API layer for external integrations
+Fork the repository
 
-- [ ] Scheduled pipeline orchestration (Airflow)
+Create feature branch (git checkout -b feature/amazing-feature)
 
----
+Commit changes (git commit -m 'Add amazing feature')
 
-## 🤝 Contributing
+Push to branch (git push origin feature/amazing-feature)
 
-1. Fork the repository
+Open Pull Request
 
-2. Create feature branch (`git checkout -b feature/amazing-feature`)
-
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-
-4. Push to branch (`git push origin feature/amazing-feature`)
-
-5. Open Pull Request
-
----
-
-## 📄 License
+📄 License
 
 This project is licensed under the MIT License - see LICENSE file for details.
 
----
-
-## 👥 Contact & Support
+👥 Contact & Support
 
 For questions, issues, or suggestions:
 
-- Create an issue on GitHub
+Create an issue on GitHub
 
-- Check existing documentation in `/DOCS`
+Check existing documentation in /DOCS
 
-- Review architecture diagrams for context
+Review architecture diagrams for context
 
----
+🎓 Learning Resources
 
-## 🎓 Learning Resources
+Technologies Used
 
-### Technologies Used
+Apache Spark: Distributed processing
 
-- **Apache Spark**: Distributed processing
+Delta Lake: Data lake format
 
-- **Delta Lake**: Data lake format
+spaCy: NLP & NER
 
-- **spaCy**: NLP & NER
+VADER: Sentiment analysis
 
-- **VADER**: Sentiment analysis
+FastText: Language detection
 
-- **FastText**: Language detection
+LexRank: Summarization
 
-- **LexRank**: Summarization
+Azure ADLS Gen2: Cloud storage
 
-- **Azure ADLS Gen2**: Cloud storage
+Streamlit: Dashboard
 
-- **Streamlit**: Dashboard
+Concepts Demonstrated
 
-### Concepts Demonstrated
+Data lakehouse architecture (Bronze-Silver-Gold)
 
-- Data lakehouse architecture (Bronze-Silver-Gold)
+ETL/ELT pipeline design
 
-- ETL/ELT pipeline design
+NLP task orchestration
 
-- NLP task orchestration
+Real-time data ingestion
 
-- Real-time data ingestion
+Cloud data processing
 
-- Cloud data processing
-
-- Interactive data visualization
+Interactive data visualization
