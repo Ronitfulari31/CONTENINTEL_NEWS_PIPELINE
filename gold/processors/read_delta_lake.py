@@ -1,10 +1,10 @@
 import os
 
-from .utils import configure_spark_home, configure_windows_environment, get_free_port
 from config import Config
+from utils.utils import configure_spark_home, configure_windows_environment, get_free_port
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
-project_root = os.path.abspath(os.path.join(current_dir, ".."))
+project_root = os.path.abspath(os.path.join(current_dir, "..", ".."))
 configure_windows_environment(project_root)
 configure_spark_home()
 
